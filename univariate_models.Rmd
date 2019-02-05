@@ -38,7 +38,7 @@ The dataset includes tree abundances from a subset of a vegetation database of G
 * disturb: plot disturbance history (from a Park report); CORPLOG=corporate logging; SETTLE=concentrated settlement, VIRGIN="high in virgin attributes", LT-SEL=light or selective logging
 * beers: transformed slope aspect ('heat load index'); 0 is SW (hottest), 2 is NE (coolest)
 
-![](../smokies_transects.png) 
+
 
 Above shows a map of the regional and local location of the elevational transects included in the dataset (from [Fridley 2009](http://plantecology.syr.edu/fridley/Fridley2009_jamc.pdf)).
 
@@ -215,8 +215,6 @@ summary(my_mod_AF)
 summary(my_glm_AR)
 summary(my_glm_AF)
 ``` 
-Compare your qualatitive assessment of which variables were most important in each model. 
-Does it appear that changing the error distribution changed the results much? In what ways? 
 
 Most importants variables for each model:
 my_mod_AR: elev (**), streamdist (**), beers (**)
@@ -226,12 +224,14 @@ my_glm_AF: elev (**)
 
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
-The change in error distribution as you can see by the summary of the data showed the significant codes in important variables changed slightly. The variables themselves remained the same. In the anova analysis of variance table between two models, you can see the change in error distribution caused the residual sum of squares to decrease in both of the exploratory analysis models. The residual sum of squares were lower in General Linear Model (GLM) rather than in OLS.
+The change in error distribution as you can see by the summary of the data showed the significant codes in important variables changed slightly. The variables themselves remained the same. As demonstrated above.
+
+In the anova analysis of variance table between two models, you can see the change in error distribution caused the residual sum of squares to decrease in both of the exploratory analysis models. The residual sum of squares were lower in General Linear Model (GLM) rather than in OLS.
 
 
 3\. Provide a plain English summary (i.e., no statistics) of what you have
 found and what conclusions we can take away from your analysis?
 
-By the looking at the exploratory analysis models and the results for each set of data you can assume that the variables do not have a correlation/effect on cover in the species Acer rubrum (Red Maple). On the contrary, one of the variables ("elev" which means elevation in meters from a digital elevation model (10 m res)) did have a correlation/effect on cover in the species Abies fraseri (Frasier Fir). The data analysis summary came from looking at the P-value, F-value, variance, total variation, graphs, and how the models fit the data sets.
+By the looking at the exploratory analysis models and the results for each set of data you can assume that the variables do not have a correlation/effect on cover in the species Acer rubrum (Red Maple). On the contrary, one of the variables ("elev" which means elevation in meters from a digital elevation model (10 m res)) did have a correlation/effect on cover in the species Abies fraseri (Frasier Fir). This data analysis summary came from looking at the P-value, F-value, variance, total variation, graphs, and how the models fit the data sets. Acer rubrum data did not show a strong relationship with anyone of the variables like Abies fraseri did.
 
 
