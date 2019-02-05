@@ -1,0 +1,237 @@
+---
+##Akash Patel HW Assignment #3
+##Due Tuesday February 5th, 2019
+---
+
+## Univariate Assignment
+
+Read in tree data
+
+```{r}
+trees = read.csv('https://raw.githubusercontent.com/dmcglinn/quant_methods/gh-pages/data/treedata_subset.csv')
+```
+
+Examine this dataset and see how the data is structured, see function `str` 
+```{r}
+head(trees)
+```
+```{r}
+str(trees)
+```
+
+The contents of the metadata file (`./data/tree_metadata.txt`) is provided here:
+
+
+The dataset includes tree abundances from a subset of a vegetation database of Great Smoky Mountains National Park (TN, NC).
+
+* plotID: unique code for each spatial unit (note some sampled more than once)
+* date: when species occurrence recorded
+* plotsize: size of quadrat in m2
+* spcode: unique 7-letter code for each species
+* species: species name
+* cover: local abundance measured as estimated horizontal cover (ie, relative area of shadow if sun is directly above) classes 1-10 are: 1=trace, 2=0-1%, 3=1-2%, 4=2-5%, 5=5-10%, 6=10-25%, 7=25-50%, 8=50-75%, 9=75-95%, 10=95-100%
+* utme: plot UTM Easting, zone 17 (NAD27 Datum)
+* utmn: plot UTM Northing, zone 17 (NAD27 Datum)
+* elev: elevation in meters from a digital elevation model (10 m res)
+* tci: topographic convergence index, or site "water potential"; measured as the upslope contributing area divided by the tangent of the slope angle (Beven and Kirkby 1979)
+* streamdist: distance of plot from the nearest permanent stream (meters)
+* disturb: plot disturbance history (from a Park report); CORPLOG=corporate logging; SETTLE=concentrated settlement, VIRGIN="high in virgin attributes", LT-SEL=light or selective logging
+* beers: transformed slope aspect ('heat load index'); 0 is SW (hottest), 2 is NE (coolest)
+
+![](../smokies_transects.png) 
+
+Above shows a map of the regional and local location of the elevational transects included in the dataset (from [Fridley 2009](http://plantecology.syr.edu/fridley/Fridley2009_jamc.pdf)).
+
+
+1\. Carry out an exploratory analysis using the tree dataset. Metadata for the
+tree study can be found [here](../data/tree_metadata.txt). Specifically, I would
+like you to develop and compare models for species cover for a habitat
+generalist [*Acer rubrum* (Red
+maple)](http://www.durhamtownship.com/blog-archives/pix/November1407.jpg) and a
+habitat specialist [*Abies fraseri* (Frasier
+fir)](https://upload.wikimedia.org/wikipedia/commons/d/d0/Abies_fraseri_Mitchell.jpg).
+Because this dataset includes both continuous and discrete explanatory variables
+use the function `Anova` in the packages `car` as such
+
+This will estimate partial effect sizes, variance explained, and p-values for 
+each explanatory variable included in the model. 
+
+Compare the p-values you observe using the function `Anova` to those generated
+using `summary`. 
+
+```{r}
+AR = subset(trees, 
+            subset =  species == "Acer rubrum", 
+              select = c("cover","elev", "tci","streamdist","disturb","beers"))
+AF = subset(trees, 
+            subset = species == "Abies fraseri", 
+              select = c("cover","elev", "tci","streamdist","disturb","beers"))
+
+my_mod_AR = lm(cover ~ elev + tci + streamdist + disturb + beers , data = AR)
+my_mod_AF = lm(cover ~ elev + tci + streamdist + disturb + beers , data = AF)
+```
+
+ANOVA
+```{r anova}
+library(car)
+Anova(my_mod_AR, type=3)
+Anova(my_mod_AF, type=3)
+``` 
+
+SUMMARY
+```{r summary}
+summary(my_mod_AR)
+summary(my_mod_AF)
+```
+
+For each species address the following additional questions:
+
+1) How well does the exploratory model appear to explain cover?
+
+The exploratory model for my_mod_AR (The generalist) does not explain cover well because it has an Adjusted R-Squared value of 0.03558 which makes specific variables significant and important (total of 3 important/significant variable listed in question 2) but it only explains 4% of variation in the data so its not useful. Even though the P values were low the model for analysis was not suitable.
+
+The exploratory model for my_mod_AF (The specialist) does explain cover well because it has an Adjusted R-Squared value of 0.5011 which is rather large but suitable for the data set. Which makes a specific variable significant and important (total of 1 important/significant variable listed in question 2)  
+
+Both models had the same values when it came down to their P values and values for each variable and the same "*" symbol on each important variables for correlating data sets. There is only one diffrence and that is the that in Anova the P value extends out to 6 total decimal places and in Summary it only extends out to 5 total decimal places. In a math point of view anova is a little more accurate when presenting the data but overall they are the same value becase the deciaml was extended out to appropriate places.
+
+2) Which explanatory variables are the most important?
+
+my_mod_AR (The generalist): elev, streamdist, and beers
+my_mod_AF (The specialist): elev
+
+3) Do model diagnostics indicate any problems with violations of OLS assumptions?
+```{r diagnostics}
+boxplot(cover ~ disturb, data = AR)
+```
+
+```{r diagnostics}
+boxplot(cover ~ disturb, data = AF)
+```
+
+```{r diagnostics}
+avPlots(my_mod_AR)
+```
+
+```{r diagnostics}
+avPlots(my_mod_AF)
+```
+
+```{r diagnostics}
+plot(my_mod_AR)
+```
+
+```{r diagnostics}
+plot(my_mod_AF)
+```
+```{r diagnostics}
+AR_res <- studres(my_mod_AR) 
+hist(AR_res, freq=FALSE, 
+   main="Distribution of Studentized Residuals for Acer rubrum (Red Maple)", col = "red")
+xAR<-seq(min(AR_res),max(AR_res),length=30) 
+yAR<-dnorm(xAR) 
+lines(xAR, yAR)
+```
+
+```{r diagnostics}
+AF_res <- studres(my_mod_AF) 
+hist(AF_res, freq=FALSE, 
+   main="Distribution of Studentized Residuals for  Abies fraseri (Frasier Fir)", col = "blue")
+xAF<-seq(min(-3),max(3),length=30) 
+yAF<-dnorm(xAF) 
+lines(xAF, yAF)
+```
+
+4) Are you able to explain variance in one species better than another, 
+   why might this be the case?
+   
+The greater an F-value means the greater ablities to obtain a significant correlation/effect with the data. The greater the F-value means that the effect/correlation of variance surpasses the amount of error variance by a huge amount, which means better variance. Now, looking at our data wee see that my_mod_AR largest F-value is 10.2233 and my_mod_AF largest F-value is 24.0358. The F-value in my_mod_AF is larger than the one in my_mod_AF meaning it has better variance because it surpasses the amount of error variance more that my_mod_AR.
+   
+
+2\. You may have noticed that the variable cover is defined as 
+positive integers between 1 and 10. and is therefore better treated
+as a discrete rather than continuous variable. 
+Re-examine your solutions to the question above but from the
+perspective of a General Linear Model (GLM) with a Poisson error term
+(rather than a Gaussian one as in OLS). 
+The Poisson distribution generates integers 0 to positive infinity so this may provide a good first approximation. 
+Your new model calls will look as follows:
+
+```{r}
+AR = subset(trees, 
+            subset =  species == "Acer rubrum", 
+              select = c("cover","elev", "tci","streamdist","disturb","beers"))
+AF = subset(trees, 
+            subset = species == "Abies fraseri", 
+              select = c("cover","elev", "tci","streamdist","disturb","beers"))
+
+my_glm_AR = glm(cover ~ elev + tci + streamdist + disturb + beers , 
+                data = AR, 
+                  family='poisson')
+my_glm_AF = glm(cover ~ elev + tci + streamdist + disturb + beers , 
+                data = AF, 
+                  family='poisson')
+
+```
+
+ANOVA
+```{r anova}
+library(car)
+Anova(my_glm_AR, type=3)
+Anova(my_glm_AF, type=3)
+``` 
+
+SUMMARY
+```{r summary}
+summary(my_glm_AR)
+summary(my_glm_AF)
+```
+
+For assessing the degree of variation explained you can use a 
+pseudo-R-squared statistic (note this is just one of many possible)
+
+```{r pseudo_r2}
+pseudo_r2 = function(my_glm_AR) {
+                1 -  my_glm_AR$deviance / my_glm_AR$null.deviance
+}
+pseudo_r2 = function(my_glm_AF) {
+                1 -  my_glm_AF$deviance / my_glm_AF$null.deviance
+}
+
+pseudo_r2(my_glm_AR)
+pseudo_r2(my_glm_AF)
+```
+my_glm_AR: Has a pseudo-R-squared value of 0.03997917 which is pretty low and only meaning the degree of variation was only around 4%. This statistically is pretty poor.
+
+my_glm_AF: Has a pseudo-R-squared value of 0.60931 which is pretty high and only meaning the degree of variation was only around 61%. This statistically is pretty good not the best but a greater variation than my_glm_AR.
+
+Compare your qualatitive assessment of which variables were most important in each model. 
+Does it appear that changing the error distribution changed the results much? In what ways? 
+
+```{r anova comparing assesments}
+anova(my_mod_AR, my_glm_AR)
+anova(my_mod_AF, my_glm_AF)
+summary(my_mod_AR)
+summary(my_mod_AF)
+summary(my_glm_AR)
+summary(my_glm_AF)
+``` 
+Compare your qualatitive assessment of which variables were most important in each model. 
+Does it appear that changing the error distribution changed the results much? In what ways? 
+
+Most importants variables for each model:
+my_mod_AR: elev (**), streamdist (**), beers (**)
+my_mod_AF: elev (***)
+my_glm_AR: elev (**), streamdist (*), beers (**)
+my_glm_AF: elev (**)
+
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+The change in error distribution as you can see by the summary of the data showed the significant codes in important variables changed slightly. The variables themselves remained the same. In the anova analysis of variance table between two models, you can see the change in error distribution caused the residual sum of squares to decrease in both of the exploratory analysis models. The residual sum of squares were lower in General Linear Model (GLM) rather than in OLS.
+
+
+3\. Provide a plain English summary (i.e., no statistics) of what you have
+found and what conclusions we can take away from your analysis?
+
+By the looking at the exploratory analysis models and the results for each set of data you can assume that the variables do not have a correlation/effect on cover in the species Acer rubrum (Red Maple). On the contrary, one of the variables ("elev" which means elevation in meters from a digital elevation model (10 m res)) did have a correlation/effect on cover in the species Abies fraseri (Frasier Fir). The data analysis summary came from looking at the P-value, F-value, variance, total variation, graphs, and how the models fit the data sets.
+
+
