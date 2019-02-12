@@ -1,0 +1,202 @@
+---
+Akash Patel
+Homework 4
+
+layout: page
+title: multivariate models
+---
+
+For this assignment will be analyzing data on the Vegetation
+and Environment in Dutch Dune Meadows.
+
+To import the data and read the metadata run the following:
+
+```{r}
+library(vegan)
+data(dune)
+data(dune.env)
+?dune
+```
+
+1. Conduct an indirect ordination on the dune plant community. Specifically,
+visually examine a NMDS plot using the bray-curtis distance metric. Below is 
+some code to help you develop a potential plot that emphasizes the role of the
+environmental variable "Moisture". Describe how you interpret the
+graphic. What is the goal of creating such a plot? Does this analysis suggest
+any interesting findings with respect to the dune vegetation?
+
+Indirect ordination shows the clustering and association between variables and species. It provides a suitable way to look at the data with a way to group the species together based off the variables. The analysis suggest that there are more species in lower A1 and Moisture levels based on the visual representation of the graph and the legend. As seen below in the graphs.
+
+```{r}
+dim(dune)
+head(dune)
+head(dune.env)
+summary(dune)
+summary(dune.env)
+str(dune.env)
+```
+
+```{r}
+dune_pca = rda(dune)
+str(dune_pca)
+plot(dune_pca)
+biplot(dune_pca)
+ordiplot(dune_pca, display = 'sp')
+orditorp(dune_pca, display = 'sp')
+
+ind_ord <- metaMDS(dune, distance = "bray", k = 2, trymax = 60)
+
+plot(ind_ord, type='n')
+    text(ind_ord, 'sp', cex=.5)
+    # generate vector of colors 
+    color_vect = rev(terrain.colors(6))[-1]
+    points(ind_ord, 'sites', pch=19, 
+           col=color_vect[dune.env$Moisture])
+    legend('topright', paste("Moisture =", 1:5, sep=''), 
+           col=color_vect, pch=19)
+    ordipointlabel(ind_ord, display = "sites", scaling = 3, add = TRUE)
+   
+ordiplot(ind_ord, display = "sp")
+
+plot(ind_ord, type='n')
+    text(ind_ord, 'sp', cex=.5)
+    # generate vector of colors 
+    color_vect = rev(terrain.colors(6))[-1]
+    points(ind_ord, 'sites', pch=19, 
+           col=color_vect[dune.env$A1])
+    legend('topright', paste("A1 =", 1:5, sep=''), 
+           col=color_vect, pch=19)
+    ordipointlabel(ind_ord, display = "sites", scaling = 3, add = TRUE)
+   
+plot(ind_ord, type='n')
+    text(ind_ord, 'sp', cex=.5)
+    # generate vector of colors 
+    color_vect = rev(terrain.colors(6))[-1]
+    points(ind_ord, 'sites', pch=19, 
+           col=color_vect[dune.env$Management])
+    legend('topright', paste("Management =", 1:5, sep=''), 
+           col=color_vect, pch=19)
+    ordipointlabel(ind_ord, display = "sites", scaling = 3, add = TRUE)
+    
+plot(ind_ord, type='n')
+    text(ind_ord, 'sp', cex=.5)
+    # generate vector of colors 
+    color_vect = rev(terrain.colors(6))[-1]
+    points(ind_ord, 'sites', pch=19, 
+           col=color_vect[dune.env$Use])
+    legend('topright', paste("Use =", 1:5, sep=''), 
+           col=color_vect, pch=19)
+    ordipointlabel(ind_ord, display = "sites", scaling = 3, add = TRUE)
+
+plot(ind_ord, type='n')
+    text(ind_ord, 'sp', cex=.5)
+    # generate vector of colors 
+    color_vect = rev(terrain.colors(6))[-1]
+    points(ind_ord, 'sites', pch=19, 
+           col=color_vect[dune.env$Manure])
+    legend('topright', paste("Manure =", 1:5, sep=''), 
+           col=color_vect, pch=19)
+    ordipointlabel(ind_ord, display = "sites", scaling = 3, add = TRUE)
+```
+
+
+ 
+
+2. Carry out a direct ordination using CCA in order to test any potential 
+hypotheses that you developed after examining the MDS plot. Specifically,
+carry out a test of the entire model (i.e., including all constrained axes)
+and also carry out tests at the scale of individual explanatory variables
+you included in your model if you included more than one variable. Plot your 
+results.
+
+```{r}
+dune_rda = rda(dune~ . , data=dune.env)
+dune_rda
+RsquareAdj(dune_rda)
+plot(dune_rda, type='n', scaling=1)
+orditorp(dune_rda, display='sp', cex=0.5, scaling=1, col='blue')
+text(dune_rda, display='cn', col='red')
+
+
+dune_cca = cca(dune~ ., data= dune.env)
+RsquareAdj(dune_cca, 100)
+anova(dune_cca, permutations = 999)
+anova(dune_cca, by='margin', permutations = 999)
+plot(dune_cca, type='n', scaling=1)
+orditorp(dune_cca, display='sp', cex=0.5, scaling=1, col='blue')
+text(dune_cca, display='bp', col='purple')
+
+dune_cca1 = cca(dune~ dune.env$A1)
+RsquareAdj(dune_cca1, 100)
+anova(dune_cca1, permutations = 999)
+anova(dune_cca1, by='margin', permutations = 999)
+plot(dune_cca1, type='n', scaling=1)
+orditorp(dune_cca1, display='sp', cex=0.5, scaling=1, col='blue')
+text(dune_cca1, display='bp', col='purple')
+
+dune_cca2 = cca(dune~ dune.env$Moisture)
+RsquareAdj(dune_cca2, 100)
+anova(dune_cca2, permutations = 999)
+anova(dune_cca2, by='margin', permutations = 999)
+plot(dune_cca2, type='n', scaling=1)
+orditorp(dune_cca2, display='sp', cex=0.5, scaling=1, col='blue')
+text(dune_cca2, display='bp', col='purple')
+
+dune_cca3 = cca(dune~ dune.env$Management)
+RsquareAdj(dune_cca3, 100)
+anova(dune_cca3, permutations = 999)
+anova(dune_cca3, by='margin', permutations = 999)
+plot(dune_cca3, type='n', scaling=1)
+orditorp(dune_cca3, display='sp', cex=0.5, scaling=1, col='blue')
+text(dune_cca3, display='bp', col='purple')
+
+dune_cca4 = cca(dune~ dune.env$Use)
+RsquareAdj(dune_cca4, 100)
+anova(dune_cca4, permutations = 999)
+anova(dune_cca4, by='margin', permutations = 999)
+plot(dune_cca4, type='n', scaling=1)
+orditorp(dune_cca4, display='sp', cex=0.5, scaling=1, col='blue')
+text(dune_cca4, display='bp', col='purple')
+
+dune_cca5 = cca(dune~ dune.env$Manure)
+RsquareAdj(dune_cca5, 100)
+anova(dune_cca5, permutations = 999)
+anova(dune_cca5, by='margin', permutations = 999)
+plot(dune_cca5, type='n', scaling=1)
+orditorp(dune_cca5, display='sp', cex=0.5, scaling=1, col='blue')
+text(dune_cca5, display='bp', col='purple')
+
+dune_cca6 = cca(dune~ dune.env$A1 + dune.env$Moisture)
+RsquareAdj(dune_cca6, 100)
+anova(dune_cca6, permutations = 999)
+anova(dune_cca6, by='margin', permutations = 999)
+plot(dune_cca6, type='n', scaling=1)
+orditorp(dune_cca6, display='sp', cex=0.5, scaling=1, col='blue')
+text(dune_cca6, display='bp', col='purple')
+
+```
+```{r}
+anova(dune_rda, permutations=999)
+anova(dune_rda, by='margin', permutations=999)
+
+anova(dune_cca1, permutations=999)
+anova(dune_cca1, by='margin', permutations=999)
+
+anova(dune_cca2, permutations=999)
+anova(dune_cca2, by='margin', permutations=999)
+
+anova(dune_cca3, permutations=999)
+anova(dune_cca3, by='margin', permutations=999)
+
+anova(dune_cca4, permutations=999)
+anova(dune_cca4, by='margin', permutations=999)
+
+anova(dune_cca5, permutations=999)
+anova(dune_cca5, by='margin', permutations=999)
+
+```
+3. Do your two analyses agree with one another or complement one another or do
+these two analyses seem to be suggesting different take home messages? Which
+analysis do you find to be more useful?
+
+The two analyses agree with each other indirect ordination allowed me to observe the information and make predicitions and hypthesize it provided a good way to obsereve the data but direct ordination with cca made it more define if provided a closer look into particular variables and gave a better image to test any potential hypothesis that were infered from the NMDS plot in question 1. Overall both the analysis seem to justify that moisture and A1 are two of the main important variables in dune vegetation.
