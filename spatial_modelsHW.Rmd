@@ -1,0 +1,172 @@
+---
+Akash Patel
+layout: page
+---
+
+## Spatial Modeling Assignment
+
+```{r}
+library(vegan)
+data(BCI)
+## UTM Coordinates (in metres)
+BCI_xy = data.frame(x = rep(seq(625754, 626654, by=100), each=5), 
+                    y = rep(seq(1011569,  1011969, by=100), len=50))
+```
+
+
+1) Examine if there is evidence of spatial dependence in a rare and a common
+species in the BCI tree dataset
+
+```{r detecting evidence of spatial dependence}
+plot(BCI_xy)
+
+species = apply(BCI, 1, function(x) sum(x > 0))
+hist(species)
+
+plot(BCI_xy, cex=species/max(species))
+
+col_brks = hist(species, plot=F)$breaks
+col_indices = as.numeric(cut(species, col_brks))
+cols = rev(terrain.colors(length(col_brks)))
+plot(BCI_xy, cex=2, pch=19, col=cols[col_indices])
+```
+##There seems to be a pattern of spacial dependence by the look at the plot and the scattering of colors.
+```{r}
+species_dist = dist(species)
+BCI_xy_dist = dist(BCI_xy)
+maxBCI_xy_dist = max(BCI_xy_dist)
+plot(BCI_xy_dist, species_dist)
+abline(lm(species_dist ~ BCI_xy_dist), lwd=3, col='yellow')
+lines(lowess(BCI_xy_dist, species_dist), lwd=3, col='purple')
+abline(v = maxBCI_xy_dist, col='black', lwd=3, lty=2)
+```
+##There is randomness with spaitial dependece. There is a flat line with the species on the plot above with no visual view of a positive or negative correlation between space and species plotted.
+
+```{r}
+Cor = cor(BCI_xy_dist, species_dist)
+Cor
+
+species_mantel = mantel(BCI_xy_dist, species_dist)
+species_mantel
+
+```
+
+```{r}
+summary(BCI)
+summary(BCI_xy)
+
+```
+
+2) Build two generalized linear models to predict the abundance of the species
+*Drypetes standleyi* using the abundance of other tree species in the study site.
+Specifically examine the following species as predictor variables:
+
+
+Note renaming the species ids to something a little easier to work with like
+"sp_a", "sp_b" will make model construction a little less cumbersome
+
+##Model 1: only include a single species as a predictor variable
+```{r}
+species_ids = c("Cordia.lasiocalyx", "Hirtella.triandra",
+           "Picramnia.latifolia", "Quassia.amara",
+           "Tabernaemontana.arborea", "Trattinnickia.aspera", 
+           "Xylopia.macrantha")
+
+BCI_species_list <- cbind("Drypetes.standleyi", "Cordia.lasiocalyx", "Hirtella.triandra",
+           "Picramnia.latifolia", "Quassia.amara",
+           "Tabernaemontana.arborea", "Trattinnickia.aspera", 
+           "Xylopia.macrantha")
+
+sp_ids <- apply(BCI_species_list, 1, function(x) sum(x > 0))
+species_data = data.frame(sp_ids, BCI, BCI_xy)
+BCI_subset = subset(species_data, select = species_ids)
+
+##GLS
+species_lm = gls(Drypetes.standleyi ~ Tabernaemontana.arborea, data=species_data)
+par(mfrow=c(1,1))
+plot(Variogram(species_lm, form= ~ x + y))
+plot(BCI_xy_dist, species_dist)
+abline(lm(species_dist ~ BCI_xy_dist), lwd=3, col='blue')
+lines(lowess(BCI_xy_dist, species_dist), lwd=3, col='purple')
+abline(v = maxBCI_xy_dist, col='black', lwd=3, lty=2)
+
+##EXP
+sp_exp = update(species_lm, corr=corExp(form=~x + y))
+plot(Variogram(sp_exp, maxDist = maxBCI_xy_dist))
+plot(Variogram(sp_exp, resType='normalized', maxDist = maxBCI_xy_dist))
+
+##RATIO
+sp_ratio_nug = update(sp_exp, corr=corRatio(form=~x + y, nugget=T))
+plot(Variogram(sp_ratio_nug, maxDist = maxBCI_xy_dist))
+plot(Variogram(sp_ratio_nug, resType='n', maxDist = maxBCI_xy_dist))
+
+anova(species_lm, sp_exp, sp_ratio_nug, test=F)
+summary(species_lm)
+summary(sp_exp)
+summary(sp_ratio_nug)
+
+col_brks = hist(residuals(sp_ratio_nug), plot=F)$breaks
+col_indices = as.numeric(cut(residuals(sp_ratio_nug), col_brks))
+cols = rev(terrain.colors(length(col_brks)))
+plot(BCI_xy, cex=2, pch=19, col=cols[col_indices])
+
+```
+
+## Model 2: include all of the species as predictor variables
+```{r}
+BCI_species_list <- cbind("Drypetes.standleyi", "Cordia.lasiocalyx", "Hirtella.triandra",
+           "Picramnia.latifolia", "Quassia.amara",
+           "Tabernaemontana.arborea", "Trattinnickia.aspera", 
+           "Xylopia.macrantha")
+
+sp_ids <- apply(BCI_species_list, 1, function(x) sum(x > 0))
+species_data = data.frame(sp_ids, BCI, BCI_xy)
+BCI_subset = subset(species_data, select = species_ids)
+
+##GLS
+species2_lm = gls(Drypetes.standleyi ~ Xylopia.macrantha, data=species_data)
+par(mfrow=c(1,1))
+plot(Variogram(species2_lm, form= ~ x + y))
+plot(BCI_xy_dist, species_dist)
+abline(lm(species_dist ~ BCI_xy_dist), lwd=3, col='blue')
+lines(lowess(BCI_xy_dist, species_dist), lwd=3, col='purple')
+abline(v = maxBCI_xy_dist, col='black', lwd=3, lty=2)
+
+##EXP
+sp2_exp = update(species_lm, corr=corExp(form=~x + y))
+plot(Variogram(sp2_exp, maxDist = maxBCI_xy_dist))
+plot(Variogram(sp2_exp, resType='normalized', maxDist = maxBCI_xy_dist))
+
+##RATIO
+sp2_ratio_nug = update(sp2_exp, corr=corRatio(form=~x + y, nugget=T))
+plot(Variogram(sp2_ratio_nug, maxDist = maxBCI_xy_dist))
+plot(Variogram(sp2_ratio_nug, resType='n', maxDist = maxBCI_xy_dist))
+
+anova(species_lm, sp2_exp, sp_ratio_nug, test=F)
+summary(species2_lm)
+summary(sp2_exp)
+summary(sp2_ratio_nug)
+
+col_brks = hist(residuals(sp2_ratio_nug), plot=F)$breaks
+col_indices = as.numeric(cut(residuals(sp_ratio_nug), col_brks))
+cols = rev(terrain.colors(length(col_brks)))
+plot(BCI_xy, cex=2, pch=19, col=cols[col_indices])
+
+```
+With both models examine the spatial dependence of the residuals using the 
+function `Variogram`. Model the spatial dependence in the residuals using one
+of the error structures available. 
+
+* Did including the spatial error term have a large impact on the coefficients
+of the model?
+
+##Including spatial error terms on the models did have an impact ot the coefficients. They graph was better to read and understand and was clearer than the first graphs originally used when frist observing the data set from question 1. It was more specific than the one in question 1.
+
+* Did including the spatial error terms significantly improve model fit (use 
+function `anova` to carry out model comparison)? 
+
+##Spatial error terms were very useful and did improve the model making it clearer and more specific to understand. Both Exp. and Ratio. was an improved model then th orginal/one without spatial error terms.
+
+* Explain why you did or did not observe a difference in the influence of adding the spatial error term between the two models.
+
+##The addition of spatial terms created a better modle to obsereve. It made observing the data more specific looking into other aspects of the data set that are not really as prominent in the first graph.
